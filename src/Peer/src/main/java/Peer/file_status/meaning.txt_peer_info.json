@@ -1,0 +1,16 @@
+{
+  "file_name" : "meaning.txt",
+  "file_length" : 43,
+  "hash_id" : "afeae4921996f3dffe8cb6a2e130685f4a475572",
+  "peers" : [ {
+    "peer_id" : "peer_12345",
+    "ip" : "192.168.88.159",
+    "port" : 2337,
+    "status" : "connected"
+  }, {
+    "peer_id" : "4becf7e7-651",
+    "ip" : "192.168.88.159",
+    "port" : 2337,
+    "status" : "connected"
+  } ]
+}

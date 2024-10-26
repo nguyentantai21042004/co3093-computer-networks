@@ -1,0 +1,22 @@
+{
+    "file_name": "src.txt",
+    "file_size": 11,
+    "piece_length": 4,
+    "pieces": [
+        {
+            "hash": "7110eda4d09e062aa5e4a390b0a572ac0d2c0220",
+            "piece_index": 0,
+            "status": "complete"
+        },
+        {
+            "hash": "fea7f657f56a2a448da7d4b535ee5e279caf3d9a",
+            "piece_index": 1,
+            "status": "complete"
+        },
+        {
+            "hash": "1c6637a8f2e1f75e06ff9984894d6bd16a3a36a9",
+            "piece_index": 2,
+            "status": "complete"
+        }
+    ]
+}
