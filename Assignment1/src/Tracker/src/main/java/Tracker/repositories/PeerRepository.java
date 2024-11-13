@@ -5,9 +5,9 @@ import java.util.List;
 import Tracker.models.Peer;
 
 public interface PeerRepository extends MongoRepository<Peer, String> {
-    Peer findByIpAddressAndFileHash(String ipAddress, String fileHash);
+    Peer findByIpAddressAndHashID(String ipAddress, String hashID);
 
-    Peer findByFileHashAndIpAddressAndPort(String fileHash, String ipAddress, int port);
+    Peer findByHashIDAndIpAddressAndPort(String hashID, String ipAddress, int port);
 
-    List<Peer> findByFileHash(String fileHash);
+    List<Peer> findByHashID(String hashID);
 }

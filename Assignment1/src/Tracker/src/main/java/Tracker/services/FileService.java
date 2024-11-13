@@ -18,14 +18,13 @@ public class FileService implements IFileService {
 
     @Override
     public File saveFile(UploadRequet uploadRequet) throws Exception {
-        String hashID = TorrentString.encode(uploadRequet.getTorrentString());
-        File existingFile = fileRepository.findByHashID(hashID);
+        File existingFile = fileRepository.findByHashID(uploadRequet.getHashID());
         if (existingFile != null) {
             throw new Exception("File already exists");
         }
 
         File newFile = File.builder()
-                .hashID(hashID)
+                .hashID(uploadRequet.getHashID())
                 .fileName(uploadRequet.getFileName())
                 .fileSize(uploadRequet.getFileSize())
                 .torrentString(uploadRequet.getTorrentString())
@@ -38,5 +37,15 @@ public class FileService implements IFileService {
     @Override
     public List<File> getFiles() {
         return fileRepository.findAll();
+    }
+
+    @Override
+    public File getFileByHashID(String hashID) {
+        return fileRepository.findByHashID(hashID);
+    }
+
+    @Override
+    public File getFileByID(String id) {
+        return fileRepository.findById(id).orElse(null);
     }
 }

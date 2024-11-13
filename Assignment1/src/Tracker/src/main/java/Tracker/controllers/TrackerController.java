@@ -8,9 +8,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import Tracker.models.File;
@@ -19,6 +21,7 @@ import Tracker.requets.AnnouceRequest;
 import Tracker.requets.CompleteRequest;
 import Tracker.requets.StatusRequest;
 import Tracker.requets.UploadRequet;
+import Tracker.responses.AnnounceResponse;
 import Tracker.responses.ApiResponse;
 import lombok.AllArgsConstructor;
 import Tracker.services.IFileService;
@@ -99,26 +102,12 @@ public class TrackerController {
                                 .build());
         }
 
-        // Endpoint: GET /files/peers
-        @GetMapping("/files/peers")
+        // Endpoint: GET /files/{hash_id}/peers
+        @GetMapping("/files/{hash_id}/peers")
         public ResponseEntity<ApiResponse> annouceRequest(
-                        @RequestBody AnnouceRequest annouceRequest,
-                        BindingResult result) {
+                        @PathVariable String hash_id) {
                 try {
-                        if (result.hasErrors()) {
-                                List<String> errorMessages = result.getFieldErrors()
-                                                .stream()
-                                                .map(FieldError::getDefaultMessage)
-                                                .toList();
-                                return ResponseEntity.badRequest().body(ApiResponse.builder()
-                                                .message("Some thing wrong in your input")
-                                                .data(errorMessages)
-                                                .status(HttpStatus.BAD_REQUEST)
-                                                .build());
-                        }
-
-                        String hashID = TorrentString.encode(annouceRequest.getTorrentString());
-                        List<Peer> peers = peerService.getPeersByHashID(hashID);
+                        List<Peer> peers = peerService.getPeersByHashID(hash_id);
 
                         return ResponseEntity.ok(ApiResponse.builder()
                                         .message("Peers fetched successfully.")
@@ -176,6 +165,21 @@ public class TrackerController {
                 }
         }
 
+        // Endpoint: GET /files/{hash_id}
+        @GetMapping("/files/{hash_id}")
+        public ResponseEntity<ApiResponse> getFileByHashID(@PathVariable String hash_id) {
+                File file = fileService.getFileByHashID(hash_id);
+                List<Peer> peers = peerService.getPeersByHashID(hash_id);
+                return ResponseEntity.ok(ApiResponse.builder()
+                                .message("File fetched successfully.")
+                                .data(AnnounceResponse.builder()
+                                                .torrentString(file.getTorrentString())
+                                                .peers(peers.stream().map(PeerResponse::fromPeer).toList())
+                                                .build())
+                                .status(HttpStatus.OK)
+                                .build());
+        }
+
         // Endpoint: POST /files/complete
         @PostMapping("/files/complete")
         public ResponseEntity<ApiResponse> completeRequest(
@@ -194,9 +198,9 @@ public class TrackerController {
                                                 .build());
                         }
 
-                        String hashID = TorrentString.encode(completeRequest.getTorrentString());
-                        peerService.completeRequest(hashID, completeRequest.getIpAddress(), completeRequest.getPort(),
-                                        completeRequest.getCompletedPieces(), completeRequest.getTotalPieces());
+                        peerService.completeRequest(completeRequest.getHashID(), completeRequest.getIpAddress(),
+                                        completeRequest.getPort(), completeRequest.getCompletedPieces(),
+                                        completeRequest.getTotalPieces());
 
                         return ResponseEntity.ok(ApiResponse.builder()
                                         .message("Peer completed successfully.")

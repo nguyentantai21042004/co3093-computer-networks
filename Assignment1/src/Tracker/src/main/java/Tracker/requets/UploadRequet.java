@@ -16,6 +16,9 @@ public class UploadRequet {
     @JsonProperty("file_size")
     private long fileSize;
 
+    @JsonProperty("hash_id")
+    private String hashID;
+
     @JsonProperty("torrent_string")
     private String torrentString;
 

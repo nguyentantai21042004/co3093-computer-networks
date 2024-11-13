@@ -17,11 +17,8 @@ public class Peer {
     @Id
     private String id; // MongoDB-generated ID
 
-    @JsonProperty("peer_id")
-    private String peerId; // Unique identifier for the peer
-
-    @JsonProperty("file_hash")
-    private String fileHash; // Hash identifier for the associated file
+    @JsonProperty("hash_id")
+    private String hashID; // Hash identifier for the associated file
 
     @JsonProperty("ip_address")
     private String ipAddress; // Địa chỉ IP của peer

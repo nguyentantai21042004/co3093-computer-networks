@@ -9,4 +9,8 @@ public interface IFileService {
     File saveFile(UploadRequet uploadRequet) throws Exception;
 
     List<File> getFiles();
+
+    File getFileByHashID(String hashID);
+
+    File getFileByID(String id);
 }

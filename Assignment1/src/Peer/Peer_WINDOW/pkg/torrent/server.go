@@ -18,18 +18,16 @@ func StartServer() {
 	var err error
 	var port int
 
-	for port = 12345; port <= 12400; port++ {
-		addr := fmt.Sprintf("%s:%d", localIP, port)
-		listener, err = net.Listen("tcp", addr)
-		if err == nil {
-			fmt.Printf("Server listening on %s\n", addr)
-			break
-		}
-	}
-	if err != nil {
+	port = 12345
+	addr := fmt.Sprintf("%s:%d", localIP, port)
+	listener, err = net.Listen("tcp", addr)
+	if err == nil {
+		fmt.Printf("Server listening on %s\n", addr)
+	} else {
 		fmt.Println("Failed to start server:", err)
 		return
 	}
+
 	defer listener.Close()
 
 	for {
@@ -50,7 +48,7 @@ func handleConnection(conn net.Conn) {
 	// Read file ID length
 	var fileIDLength uint32
 	if err := binary.Read(conn, binary.BigEndian, &fileIDLength); err != nil {
-		fmt.Println("[Server] Error reading file ID length:", err)
+		// fmt.Println("[Server] Error reading file ID length:", err)
 		return
 	}
 	fmt.Printf("[Server] File ID length received: %d\n", fileIDLength)
@@ -58,7 +56,7 @@ func handleConnection(conn net.Conn) {
 	// Read file ID
 	fileID := make([]byte, fileIDLength)
 	if _, err := conn.Read(fileID); err != nil {
-		fmt.Println("[Server] Error reading file ID:", err)
+		// fmt.Println("[Server] Error reading file ID:", err)
 		return
 	}
 	fileIDStr := string(fileID)
@@ -69,7 +67,7 @@ func handleConnection(conn net.Conn) {
 
 	// Locate torrent file and status based on the sanitized file ID
 	torrentFilePath := filepath.Join("data", sanitizedFileID+".bencode")
-	fmt.Printf("[Server] Looking for torrent file at %s\n", torrentFilePath)
+	// fmt.Printf("[Server] Looking for torrent file at %s\n", torrentFilePath)
 	torrent, err := DecodeTorrentFile(torrentFilePath)
 	if err != nil {
 		fmt.Println("[Server] Failed to decode torrent file:", err)

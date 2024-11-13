@@ -8,7 +8,6 @@ import lombok.AllArgsConstructor;
 import Tracker.models.Peer;
 import Tracker.repositories.PeerRepository;
 import Tracker.requets.UploadRequet;
-import Tracker.utils.TorrentString;
 
 import java.util.List;
 import java.util.Map;
@@ -21,18 +20,15 @@ public class PeerService implements IPeerService {
 
     @Override
     public Peer savePeer(UploadRequet uploadRequet) throws Exception {
-        Peer existingPeer = peerRepository.findByIpAddressAndFileHash(uploadRequet.getIpAddress(),
-                uploadRequet.getTorrentString());
+        Peer existingPeer = peerRepository.findByIpAddressAndHashID(uploadRequet.getIpAddress(),
+                uploadRequet.getHashID());
 
         if (existingPeer != null) {
             throw new Exception("Peer already exists in this file");
         }
 
-        String hashID = TorrentString.encode(uploadRequet.getTorrentString());
-
         Peer newPeer = Peer.builder()
-                .peerId(UUID.randomUUID().toString())
-                .fileHash(hashID)
+                .hashID(uploadRequet.getHashID())
                 .ipAddress(uploadRequet.getIpAddress())
                 .port(uploadRequet.getServerPort())
                 .completedPieces(uploadRequet.getTotalPieces())
@@ -50,7 +46,7 @@ public class PeerService implements IPeerService {
 
     @Override
     public List<Peer> getPeersByHashID(String hashID) {
-        return peerRepository.findByFileHash(hashID);
+        return peerRepository.findByHashID(hashID);
     }
 
     @Override
@@ -89,9 +85,23 @@ public class PeerService implements IPeerService {
     @Override
     public void completeRequest(String hashID, String ipAddress, int port, int completedPieces, int totalPieces)
             throws Exception {
-        Peer existingPeer = peerRepository.findByFileHashAndIpAddressAndPort(hashID, ipAddress, port);
+        Peer existingPeer = peerRepository.findByHashIDAndIpAddressAndPort(hashID, ipAddress, port);
         if (existingPeer == null) {
-            throw new Exception("Peer not found");
+            Peer newPeer = Peer.builder()
+                    .hashID(hashID)
+                    .ipAddress(ipAddress)
+                    .port(port)
+                    .completedPieces(completedPieces)
+                    .totalPieces(totalPieces)
+                    .build();
+            if (completedPieces == totalPieces) {
+                newPeer.setStatus("COMPLETED");
+            } else {
+                newPeer.setStatus("LECTURE");
+            }
+
+            peerRepository.save(newPeer);
+            return;
         }
 
         existingPeer.setCompletedPieces(completedPieces);

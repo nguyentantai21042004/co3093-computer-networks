@@ -58,12 +58,12 @@ func CreateTorrentFile(filename string, pieceSize int) (*models.TorrentFile, err
 }
 
 // Save the torrent file in .bencode format
-func SaveTorrentFile(torrent *models.TorrentFile) error {
+func SaveTorrentFile(torrent *models.TorrentFile) (string, error) {
 	outputDir := "data"
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
 		err := os.Mkdir(outputDir, 0755)
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
 
@@ -74,9 +74,9 @@ func SaveTorrentFile(torrent *models.TorrentFile) error {
 	torrentFilePath := filepath.Join(outputDir, fileHashID+".bencode")
 	err := os.WriteFile(torrentFilePath, []byte(ToBencode(torrent)), 0644)
 	if err != nil {
-		return fmt.Errorf("Error saving Bencode file: %v", err)
+		return "", fmt.Errorf("Error saving Bencode file: %v", err)
 	}
-	return nil
+	return fileHashID, nil
 }
 
 // Decode a Bencode file
@@ -92,7 +92,6 @@ func DecodeTorrentFile(filePath string) (*models.TorrentFile, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error reading file content: %v", err)
 	}
-	fmt.Printf("Raw Torrent File Content: %s\n", string(content))
 
 	// Now decode the Bencode data
 	torrent := &models.TorrentFile{}

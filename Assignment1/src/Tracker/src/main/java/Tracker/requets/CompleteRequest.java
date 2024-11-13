@@ -12,8 +12,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CompleteRequest {
-    @JsonProperty("torrent_string")
-    private String torrentString;
+    @JsonProperty("hash_id")
+    private String hashID;
 
     @JsonProperty("ip_address")
     private String ipAddress;
