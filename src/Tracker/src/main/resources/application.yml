@@ -1,7 +1,0 @@
-server:
-  port: 8088
-
-spring:
-  data:
-    mongodb:
-      uri: mongodb+srv://tai21042004:21042004@shopeeapp.yptanxn.mongodb.net/ComputerNetwork?retryWrites=true&w=majority

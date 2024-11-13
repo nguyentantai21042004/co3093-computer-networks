@@ -1,0 +1,8 @@
+server:
+  port: 8088
+  address: 0.0.0.0
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/computer-network
