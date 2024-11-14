@@ -1,7 +1,5 @@
 package Tracker.services;
 
-import java.util.UUID;
-
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import lombok.AllArgsConstructor;
