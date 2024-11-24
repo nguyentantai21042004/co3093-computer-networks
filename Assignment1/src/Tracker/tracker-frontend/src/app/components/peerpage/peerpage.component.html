@@ -1,0 +1,33 @@
+<div class="container-fluid vh-100 bg-light d-flex">
+    <!-- Main Content -->
+    <div class="flex-grow-1 p-4">
+        <!-- Header với thanh tìm kiếm -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h4 fw-bold">Peers</h1>
+            <div>
+                <input type="text" class="form-control" style="width: 300px;"
+                    placeholder="Search peers by hashID of file..." (input)="onSearch($event)" />
+            </div>
+        </div>
+
+        <!-- Thông báo hướng dẫn -->
+        <div class="alert alert-info text-center mb-4">
+            Nếu bạn muốn tải file xuống, hãy cung cấp <strong>Hash ID</strong> cho endpoint
+            <code>/api/files</code> để lấy thông tin metadata.
+        </div>
+
+        <!-- Danh sách file -->
+        <div class="bg-white rounded shadow-sm p-4">
+            <!-- Sử dụng *ngFor trên thẻ div -->
+            <div class="d-flex align-items-center border-bottom py-3" *ngFor="let peer of peers">
+                <div class="flex-grow-1">
+                    <h6 class="mb-0">IP Address: {{ peer.ip_address }}</h6>
+                    <small class="text-muted">Port: {{ peer.port }}</small><br />
+                </div>
+                <div class="d-flex align-items-center">
+                    <span class="text-muted">{{ peer.status }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

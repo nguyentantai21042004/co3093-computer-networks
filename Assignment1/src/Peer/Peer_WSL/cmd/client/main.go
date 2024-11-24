@@ -14,73 +14,109 @@ import (
 	"github.com/nguyentantai21042004/CO3093-Computer-Networks-HK241/pkg/utils"
 )
 
-func main() {
-	go torrent.StartServer() // Start server in the background
+const (
+	Reset   = "\033[0m"
+	Red     = "\033[31m"
+	Green   = "\033[32m"
+	Yellow  = "\033[33m"
+	Blue    = "\033[34m"
+	Magenta = "\033[35m"
+	Cyan    = "\033[36m"
+	White   = "\033[37m"
+)
 
-	trackerURL := "http://172.20.114.189:8088"
+// Hiển thị menu với màu sắc và phân cách
+func showMenu() {
+	fmt.Println(Cyan + "\n================== Torrent CLI ==================" + Reset)
+	fmt.Println(Green + "Options:" + Reset)
+	fmt.Println("1. 📤 Share a file")
+	fmt.Println("2. 📥 Download a file")
+	fmt.Println("3. 📄 Get all files from tracker")
+	fmt.Println("4. 🔍 Get all peers from tracker")
+	fmt.Println("5. ❌ Exit")
+	fmt.Println(Cyan + "=================================================" + Reset)
+}
+
+// Hiệu ứng loading spinner cho các tác vụ
+func loadingSpinner(message string) {
+	spinner := []string{"|", "/", "-", "\\"}
+	fmt.Print(Yellow + message + Reset)
+	for i := 0; i < 10; i++ {
+		fmt.Printf("\r%s %s", message, spinner[i%len(spinner)])
+		time.Sleep(100 * time.Millisecond)
+	}
+	fmt.Print("\r" + Green + "Done!" + Reset + "\n")
+}
+
+func main() {
+	// Giả sử torrent.StartServer là hàm khởi chạy server của bạn
+	go torrent.StartServer()
+
+	trackerURL := "https://co3093-computer-networks-tracker-backend.onrender.com"
 	client := tracker.NewTrackerClient(trackerURL, 10*time.Second)
 
 	reader := bufio.NewReader(os.Stdin)
+
+	// Vòng lặp chính
 	for {
-		fmt.Println("\nOptions:")
-		fmt.Println("1. Share a file")
-		fmt.Println("2. Download a file")
-		fmt.Println("3. Get all files from tracker")
-		fmt.Println("4. Get file details from tracker")
-		fmt.Println("5. Get all peers from tracker")
-		fmt.Println("6. Exit")
+		// Hiển thị menu
+		showMenu()
+		fmt.Print("Choose an option (1-6): ")
+		input, _ := reader.ReadString('\n')
+		input = strings.TrimSpace(input)
 
-		var choice int
-		fmt.Print("Choose an option (1-8): ")
-		fmt.Scanf("%d\n", &choice)
-
-		switch choice {
-		case 1:
+		// Xử lý lựa chọn
+		switch input {
+		case "1":
+			fmt.Println(Green + "Sharing a file..." + Reset)
 			handleShareFile(reader, client)
-		case 2:
+		case "2":
+			fmt.Println(Green + "Downloading a file..." + Reset)
 			handleDownloadFile(client, reader)
-		case 3:
+		case "3":
+			fmt.Println(Green + "Getting all files from tracker..." + Reset)
 			handleGetFiles(client)
-		case 4:
-			handleGetFileDetails(client)
-		case 5:
+		case "4":
+			fmt.Println(Green + "Getting all peers from tracker..." + Reset)
 			handleGetPeers(client)
-		case 6:
-			fmt.Println("Exiting program...")
+		case "5":
+			fmt.Println(Green + "Exiting program..." + Reset)
 			return
 		default:
-			fmt.Println("Invalid choice, please try again.")
+			fmt.Println(Red + "Invalid choice, please try again." + Reset)
 		}
 	}
 }
 
 func handleShareFile(reader *bufio.Reader, client *tracker.TrackerClient) {
-	fmt.Print("Enter the path to the file to share: ")
+	fmt.Print(Cyan + "Enter the path to the file to share: " + Reset)
 	filename, _ := reader.ReadString('\n')
 	filename = strings.TrimSpace(filename)
 
 	pieceSize := 1024
+	fmt.Println(Yellow + "Creating torrent file..." + Reset)
+	loadingSpinner("Processing")
 	torrentFile, err := torrent.CreateTorrentFile(filename, pieceSize)
 	if err != nil {
-		fmt.Println("Error creating torrent:", err)
+		fmt.Println(Red + "Error creating torrent: " + err.Error() + Reset)
 		return
 	}
 
+	fmt.Println(Yellow + "Saving torrent file..." + Reset)
 	fileHashID, err := torrent.SaveTorrentFile(torrentFile)
 	if err != nil {
-		fmt.Println("Error saving torrent file:", err)
+		fmt.Println(Red + "Error saving torrent file: " + err.Error() + Reset)
 		return
 	}
 
 	status := torrent.CreateFileStatusForPeer1(torrentFile)
 	err = torrent.SaveFileStatus(status)
 	if err != nil {
-		fmt.Println("Error saving file status:", err)
+		fmt.Println(Red + "Error saving file status: " + err.Error() + Reset)
 		return
 	}
 
 	torrentString := torrent.ToBencode(torrentFile)
-
 	uploadReq := models.UploadRequest{
 		FileName:      filename,
 		FileSize:      torrentFile.PieceSize * len(torrentFile.Hashes),
@@ -92,90 +128,84 @@ func handleShareFile(reader *bufio.Reader, client *tracker.TrackerClient) {
 		TotalPieces:   len(torrentFile.Hashes),
 	}
 
+	fmt.Println(Yellow + "Uploading file to tracker..." + Reset)
 	resp, err := client.UploadFile(uploadReq)
 	if err != nil {
-		fmt.Println("Error uploading file:", err)
+		fmt.Println(Red + "Error uploading file: " + err.Error() + Reset)
 		return
 	}
-	fmt.Printf("Upload response: %+v\n", resp)
-
-	fmt.Printf("File '%s' is now shared.\n", filename)
+	fmt.Printf(Green+"File '%s' is now shared successfully!\n"+Reset, filename)
+	fmt.Printf("Upload response: %+v\n", resp.Data)
 }
 
 func handleDownloadFile(client *tracker.TrackerClient, reader *bufio.Reader) {
-	// Step 1: Prompt user to enter the hashID
-	fmt.Print("Enter the hash ID of the file to fetch details and download: ")
+	fmt.Print(Cyan + "Enter the hash ID of the file to fetch details and download: " + Reset)
 	hashID, _ := reader.ReadString('\n')
 	hashID = strings.TrimSpace(hashID)
 
-	// Step 2: Fetch file details for the given hashID
+	fmt.Println(Yellow + "Fetching file details from tracker..." + Reset)
+	loadingSpinner("Fetching details")
 	resp, err := client.GetFileDetails(hashID)
 	if err != nil {
-		fmt.Println("Error retrieving file details:", err)
+		fmt.Println(Red + "Error retrieving file details: " + err.Error() + Reset)
 		return
 	}
 
-	// Print out the fetched file details
-	fmt.Printf("File details response for hash ID '%s':\n", hashID)
-	fmt.Printf("Status: %s\n", resp.Status)
-	fmt.Printf("Message: %s\n", resp.Message)
+	fmt.Println(Green + "File details retrieved successfully!" + Reset)
+	fmt.Printf("Status: %s\nMessage: %s\n", resp.Status, resp.Message)
 
-	// Step 3: Create the data directory if it doesn't exist
 	dataDir := "data"
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
+		fmt.Println(Yellow + "Creating data directory..." + Reset)
 		err := os.Mkdir(dataDir, 0755)
 		if err != nil {
-			fmt.Println("Error creating data directory:", err)
+			fmt.Println(Red + "Error creating data directory: " + err.Error() + Reset)
 			return
 		}
 	}
 
-	// Step 4: Create the .bencode file with only the torrent string
 	filePath := filepath.Join(dataDir, hashID+".bencode")
+	fmt.Println(Yellow + "Creating torrent file..." + Reset)
 	err = os.WriteFile(filePath, []byte(resp.Data.TorrentString), 0644)
 	if err != nil {
-		fmt.Println("Error writing torrent string to file:", err)
+		fmt.Println(Red + "Error writing torrent string to file: " + err.Error() + Reset)
 		return
 	}
-	fmt.Printf("\nTorrent file '%s' created with content:\n%s\n", filePath, resp.Data.TorrentString)
+	fmt.Printf(Green+"\nTorrent file '%s' created successfully.\n"+Reset, filePath)
 
-	// Step 5: Store peers in a list variable with "ip:port" format only
 	var peerList []string
 	for _, peer := range resp.Data.Peers {
 		peerID := fmt.Sprintf("%s:%d", peer.IPAddress, peer.Port)
 		peerList = append(peerList, peerID)
 	}
 
-	// Print the list of peers
-	fmt.Println("\nList of peers associated with this torrent (IP:Port):")
+	fmt.Println("\n" + Cyan + "List of peers associated with this torrent (IP:Port):" + Reset)
 	for _, peer := range peerList {
 		fmt.Println("  -", peer)
 	}
 
-	// Step 6: Decode the .bencode file to prepare for download
+	fmt.Println(Yellow + "Decoding torrent file for download..." + Reset)
 	torrentFile, err := torrent.DecodeTorrentFile(filePath)
 	if err != nil {
-		fmt.Println("Error decoding torrent file:", err)
+		fmt.Println(Red + "Error decoding torrent file: " + err.Error() + Reset)
 		return
 	}
 
-	// Step 7: Create file status for downloading and save it
 	status := torrent.CreateFileStatusForPeer2(torrentFile)
 	err = torrent.SaveFileStatus(status)
 	if err != nil {
-		fmt.Println("Error saving file status:", err)
+		fmt.Println(Red + "Error saving file status: " + err.Error() + Reset)
 		return
 	}
 
-	// Step 8: Download the file from the peers
+	fmt.Println(Yellow + "Downloading file from peers..." + Reset)
 	err = torrent.DownloadFileFromPeers(torrentFile, status, torrentFile.Filename, peerList)
 	if err != nil {
-		fmt.Println("Error downloading file:", err)
-	} else {
-		fmt.Printf("File '%s' downloaded successfully.\n", torrentFile.Filename)
+		fmt.Println(Red + "Error downloading file: " + err.Error() + Reset)
+		return
 	}
+	fmt.Printf(Green+"File '%s' downloaded successfully!\n"+Reset, torrentFile.Filename)
 
-	// Step 9: Mark the file as complete on the tracker
 	completeReq := models.CompleteRequest{
 		HashID:          hashID,
 		IPAddress:       utils.GetLocalIP(),
@@ -183,33 +213,68 @@ func handleDownloadFile(client *tracker.TrackerClient, reader *bufio.Reader) {
 		CompletedPieces: len(torrentFile.Hashes),
 		TotalPieces:     len(torrentFile.Hashes),
 	}
+
+	fmt.Println(Yellow + "Marking file as complete on tracker..." + Reset)
 	completeResp, err := client.SendStatus(completeReq)
 	if err != nil {
-		fmt.Println("Error marking file as complete on the tracker:", err)
-	} else {
-		fmt.Printf("File marked as complete on tracker: %s\n", completeResp.Message)
+		fmt.Println(Red + "Error marking file as complete: " + err.Error() + Reset)
+		return
 	}
+	fmt.Printf(Green+"File marked as complete on tracker: %s\n"+Reset, completeResp.Message)
 }
 
 func handleGetFiles(client *tracker.TrackerClient) {
+	fmt.Println(Yellow + "Fetching all files from tracker..." + Reset)
+	loadingSpinner("Processing")
+
 	resp, err := client.GetAllFiles()
 	if err != nil {
-		fmt.Println("Error retrieving files:", err)
+		fmt.Println(Red + "Error retrieving files: " + err.Error() + Reset)
 		return
 	}
-	fmt.Printf("Files response: %+v\n", resp)
+
+	if len(resp.Data) == 0 {
+		fmt.Println(Yellow + "No files available on the tracker." + Reset)
+		return
+	}
+
+	fmt.Println(Green + "\nList of Files:" + Reset)
+	fmt.Printf("%-30s %-10s %-10s\n", "File Name", "Size (MB)", "Hash ID")
+	fmt.Println(strings.Repeat("-", 50))
+	for _, file := range resp.Data {
+		fmt.Printf("%-30s %-10.2f %-10s\n", file.FileName, float64(file.FileSize)/1024/1024, file.HashID)
+	}
+	fmt.Println(Cyan + "\nFiles fetched successfully!" + Reset)
 }
 
 func handleGetPeers(client *tracker.TrackerClient) {
+	fmt.Println(Yellow + "Fetching all peers from tracker..." + Reset)
+	loadingSpinner("Processing")
+
 	resp, err := client.GetAllPeers()
 	if err != nil {
-		fmt.Println("Error retrieving peers:", err)
+		fmt.Println(Red + "Error retrieving peers: " + err.Error() + Reset)
 		return
 	}
-	fmt.Printf("Peers response: %+v\n", resp)
+
+	if len(resp.Data) == 0 {
+		fmt.Println(Yellow + "No peers available on the tracker." + Reset)
+		return
+	}
+
+	fmt.Println(Green + "\nList of Peers:" + Reset)
+	fmt.Printf("%-15s %-10s\n", "IP Address", "Port")
+	fmt.Println(strings.Repeat("-", 30))
+	for _, peer := range resp.Data {
+		fmt.Printf("%-15s %-10d\n", peer.IPAddress, peer.Port)
+	}
+	fmt.Println(Cyan + "\nPeers fetched successfully!" + Reset)
 }
 
 func handleMarkFileComplete(client *tracker.TrackerClient) {
+	fmt.Println(Yellow + "Marking file as complete on tracker..." + Reset)
+	loadingSpinner("Processing")
+
 	completeReq := models.CompleteRequest{
 		HashID:          "eiogjifwpoajfjPWFJIPJAFJOAJWOFJOPAJOFWJPOS",
 		IPAddress:       "192.168.1.10",
@@ -220,61 +285,9 @@ func handleMarkFileComplete(client *tracker.TrackerClient) {
 
 	resp, err := client.SendStatus(completeReq)
 	if err != nil {
-		fmt.Println("Error marking file complete:", err)
+		fmt.Println(Red + "Error marking file complete: " + err.Error() + Reset)
 		return
 	}
-	fmt.Printf("Complete response: %+v\n", resp)
-}
-
-func handleGetFileDetails(client *tracker.TrackerClient) {
-	// Example hash_id for testing - replace with actual hash_id as needed
-	hashID := "eiogjifwpoajfjPWFJIPJAFJOAJWOFJOPAJOFWJPOS"
-
-	// Fetch file details for the given hashID
-	resp, err := client.GetFileDetails(hashID)
-	if err != nil {
-		fmt.Println("Error retrieving file details:", err)
-		return
-	}
-
-	// Print out the file details response
-	fmt.Printf("File details response for hash ID '%s':\n", hashID)
-	fmt.Printf("Status: %s\n", resp.Status)
-	fmt.Printf("Message: %s\n", resp.Message)
-	fmt.Printf("Torrent String: %s\n", resp.Data.TorrentString)
-
-	// Step 1: Create the data directory if it doesn't exist
-	dataDir := "data"
-	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
-		err := os.Mkdir(dataDir, 0755)
-		if err != nil {
-			fmt.Println("Error creating data directory:", err)
-			return
-		}
-	}
-
-	// Step 2: Create the .bencode file with only the torrent string
-	filePath := filepath.Join(dataDir, hashID+".bencode")
-	err = os.WriteFile(filePath, []byte(resp.Data.TorrentString), 0644)
-	if err != nil {
-		fmt.Println("Error writing torrent string to file:", err)
-		return
-	}
-
-	// Step 2.5: Store peers in a list variable with "ip:port" format only
-	var peerList []string
-	for _, peer := range resp.Data.Peers {
-		peerID := fmt.Sprintf("%s:%d", peer.IPAddress, peer.Port)
-		peerList = append(peerList, peerID)
-	}
-
-	// Print the list of peers from the variable
-	fmt.Println("\nList of peers associated with this torrent (IP:Port):")
-	for _, peer := range peerList {
-		fmt.Println("  -", peer)
-	}
-
-	// Step 3: Confirm the file was created with the expected content
-	fmt.Printf("\nFile '%s' created in the 'data' directory with the following content:\n", filePath)
-	fmt.Println(resp.Data.TorrentString)
+	fmt.Println(Green + "File marked as complete successfully!" + Reset)
+	fmt.Printf("Response: %+v\n", resp)
 }

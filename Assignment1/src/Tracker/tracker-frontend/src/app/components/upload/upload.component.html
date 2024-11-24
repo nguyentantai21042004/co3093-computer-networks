@@ -1,0 +1,37 @@
+<div class="container mt-4">
+    <h2 class="mb-4">Upload File lên Tracker</h2>
+    <form #uploadForm="ngForm" (ngSubmit)="onSubmit(uploadForm)" class="shadow p-4 bg-light rounded">
+        <!-- Chọn File -->
+        <div class="mb-3">
+            <label for="file" class="form-label">Chọn File</label>
+            <input type="file" id="file" class="form-control" (change)="onFileSelected($event)" required />
+            <small class="text-muted">Hãy chọn một file để tự động điền thông tin.</small>
+        </div>
+
+        <!-- Tên File -->
+        <div class="mb-3">
+            <label for="fileName" class="form-label">Tên File</label>
+            <input type="text" id="fileName" class="form-control" name="fileName" [(ngModel)]="fileData.fileName"
+                required placeholder="Tên file sẽ được tự động điền từ file bạn chọn" />
+        </div>
+
+        <!-- Kích Thước File -->
+        <div class="mb-3">
+            <label for="fileSize" class="form-label">Kích Thước File (MB)</label>
+            <input type="number" id="fileSize" class="form-control" name="fileSize" [(ngModel)]="fileData.fileSize"
+                required placeholder="Kích thước file sẽ được tự động tính toán" />
+        </div>
+
+        <!-- Mô Tả -->
+        <div class="mb-3">
+            <label for="description" class="form-label">Mô Tả</label>
+            <textarea id="description" class="form-control" name="description" [(ngModel)]="fileData.description"
+                placeholder="Bạn có thể sửa mô tả file (nếu cần)"></textarea>
+        </div>
+
+        <!-- Nút Upload -->
+        <button type="submit" class="btn btn-primary" [disabled]="!uploadForm.valid">
+            Tải Lên
+        </button>
+    </form>
+</div>

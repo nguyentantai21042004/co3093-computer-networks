@@ -59,10 +59,7 @@ func (tc *TrackerClient) SendStatus(req models.CompleteRequest) (models.Complete
 // GetFileDetails retrieves the details of a specific file using its hash_id.
 func (tc *TrackerClient) GetFileDetails(hashID string) (models.FileDetailsResponse, error) {
 	var resp models.FileDetailsResponse
-	// Construct the full URL with hashID injected into the FileDetailsEndpoint
 	endpoint := fmt.Sprintf(FileDetailsEndpoint, hashID)
-
-	// Send the GET request to the tracker without a request body
 	err := tc.SendRequest("GET", endpoint, nil, &resp)
 	if err != nil {
 		return models.FileDetailsResponse{}, fmt.Errorf("failed to fetch file details: %v", err)
