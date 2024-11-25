@@ -9,22 +9,21 @@ import (
 	"github.com/nguyentantai21042004/CO3093-Computer-Networks-HK241/pkg/utils"
 )
 
-// Tạo file trạng thái với thông tin chi tiết cho từng mảnh
+// Create FileStatus for Peer1 with piece status set to true
 func CreateFileStatusForPeer1(torrent *models.TorrentFile) *models.FileStatus {
 	var pieces []models.PieceInfo
 	for _, hash := range torrent.Hashes {
 		pieces = append(pieces, models.PieceInfo{
 			Hash:   hash,
-			Status: true, // Peer1 đã tải hết tất cả các mảnh, nên đặt true
+			Status: true, // Peer1 has downloaded all pieces, so set to true
 		})
 	}
 
-	fileHashID := utils.CalculateFileHashID(torrent.Hashes) // Tính mã hash ID của file
-
+	fileHashID := utils.CalculateFileHashID(torrent.Hashes) // Calculate file hash ID
 	return &models.FileStatus{
 		Filename:   torrent.Filename,
 		PieceSize:  torrent.PieceSize,
-		FileHashID: fileHashID, // Lưu mã hash ID của file
+		FileHashID: fileHashID, // Save file hash ID
 		Pieces:     pieces,
 	}
 }

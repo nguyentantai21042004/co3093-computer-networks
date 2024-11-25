@@ -22,9 +22,9 @@ func StartServer() {
 	addr := fmt.Sprintf("%s:%d", localIP, port)
 	listener, err = net.Listen("tcp", addr)
 	if err == nil {
-		fmt.Printf("Server listening on %s\n", addr)
+		logInfo(fmt.Sprintf("Server listening on %s", addr))
 	} else {
-		fmt.Println("Failed to start server:", err)
+		logError(fmt.Sprintf("Failed to start server: %v", err))
 		return
 	}
 
@@ -33,7 +33,7 @@ func StartServer() {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			fmt.Println("Error accepting connection:", err)
+			logError(fmt.Sprintf("Error accepting connection: %v", err))
 			continue
 		}
 		go handleConnection(conn)
@@ -43,7 +43,7 @@ func StartServer() {
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
-	fmt.Println("[Server] Connection accepted from", conn.RemoteAddr())
+	logInfo(fmt.Sprintf("[Server] Connection accepted from %s", conn.RemoteAddr()))
 
 	// Read file ID length
 	var fileIDLength uint32
@@ -51,7 +51,7 @@ func handleConnection(conn net.Conn) {
 		// fmt.Println("[Server] Error reading file ID length:", err)
 		return
 	}
-	fmt.Printf("[Server] File ID length received: %d\n", fileIDLength)
+	logInfo(fmt.Sprintf("[Server] File ID length received: %d", fileIDLength))
 
 	// Read file ID
 	fileID := make([]byte, fileIDLength)
@@ -60,7 +60,7 @@ func handleConnection(conn net.Conn) {
 		return
 	}
 	fileIDStr := string(fileID)
-	fmt.Printf("[Server] File ID received: %s\n", fileIDStr)
+	logInfo(fmt.Sprintf("[Server] File ID received: %s", fileIDStr))
 
 	// Sanitize the fileHashID to ensure it's a valid filename
 	sanitizedFileID := utils.SanitizeFileName(fileIDStr) // Sanitize the file ID
@@ -70,30 +70,30 @@ func handleConnection(conn net.Conn) {
 	// fmt.Printf("[Server] Looking for torrent file at %s\n", torrentFilePath)
 	torrent, err := DecodeTorrentFile(torrentFilePath)
 	if err != nil {
-		fmt.Println("[Server] Failed to decode torrent file:", err)
+		logError(fmt.Sprintf("[Server] Failed to decode torrent file: %v", err))
 		return
 	}
 
 	statusFilePath := filepath.Join("data", sanitizedFileID+"_status.json")
 	status, err := LoadFileStatus(statusFilePath)
 	if err != nil {
-		fmt.Println("[Server] Failed to load file status:", err)
+		logError(fmt.Sprintf("[Server] Failed to load file status: %v", err))
 		return
 	}
 
 	// Request specific piece index from client
 	var pieceIndex uint32
 	if err = binary.Read(conn, binary.BigEndian, &pieceIndex); err != nil {
-		fmt.Println("[Server] Error reading piece index:", err)
+		logError(fmt.Sprintf("[Server] Error reading piece index: %v", err))
 		return
 	}
-	fmt.Printf("[Server] Piece index requested: %d\n", pieceIndex)
+	logInfo(fmt.Sprintf("[Server] Piece index requested: %d", pieceIndex))
 
 	// Validate piece index and check if the piece is available
 	if int(pieceIndex) >= len(status.Pieces) || !status.Pieces[pieceIndex].Status {
 		fmt.Printf("[Server] Piece %d is unavailable, notifying client.\n", pieceIndex)
 		if err = binary.Write(conn, binary.BigEndian, uint32(0)); err != nil {
-			fmt.Println("[Server] Error sending unavailable piece notice:", err)
+			logError(fmt.Sprintf("[Server] Error sending unavailable piece notice: %v", err))
 		}
 		return
 	}
@@ -101,7 +101,7 @@ func handleConnection(conn net.Conn) {
 	// Open file and serve the requested piece
 	file, err := os.Open(torrent.Filename)
 	if err != nil {
-		fmt.Println("[Server] Failed to open file:", err)
+		logError(fmt.Sprintf("[Server] Failed to open file: %v", err))
 		return
 	}
 	defer file.Close()
@@ -110,19 +110,19 @@ func handleConnection(conn net.Conn) {
 	buffer := make([]byte, torrent.PieceSize)
 	n, err := file.Read(buffer)
 	if err != nil && err != io.EOF {
-		fmt.Println("[Server] Error reading file:", err)
+		logError(fmt.Sprintf("[Server] Error reading file: %v", err))
 		return
 	}
 
 	// Send piece size and data
 	if err = binary.Write(conn, binary.BigEndian, uint32(n)); err != nil {
-		fmt.Println("[Server] Error sending piece size:", err)
+		logError(fmt.Sprintf("[Server] Error sending piece size: %v", err))
 		return
 	}
 	if _, err = conn.Write(buffer[:n]); err != nil {
-		fmt.Println("[Server] Error sending piece data:", err)
+		logError(fmt.Sprintf("[Server] Error sending piece data: %v", err))
 		return
 	}
 
-	fmt.Printf("[Server] Sent piece %d of size %d bytes\n", pieceIndex, n)
+	logInfo(fmt.Sprintf("[Server] Sent piece %d of size %d bytes", pieceIndex, n))
 }

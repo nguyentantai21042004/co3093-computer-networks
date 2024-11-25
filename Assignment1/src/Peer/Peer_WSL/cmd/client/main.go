@@ -25,19 +25,19 @@ const (
 	White   = "\033[37m"
 )
 
-// Hiển thị menu với màu sắc và phân cách
+// Display menu with colors and separation
 func showMenu() {
 	fmt.Println(Cyan + "\n================== Torrent CLI ==================" + Reset)
 	fmt.Println(Green + "Options:" + Reset)
-	fmt.Println("1. 📤 Share a file")
-	fmt.Println("2. 📥 Download a file")
-	fmt.Println("3. 📄 Get all files from tracker")
-	fmt.Println("4. 🔍 Get all peers from tracker")
-	fmt.Println("5. ❌ Exit")
+	fmt.Println("[1] 📤 Share a file - Upload a file to share with peers.")
+	fmt.Println("[2] 📥 Download a file - Fetch details and download from peers.")
+	fmt.Println("[3] 📄 Get all files - View all files available on the tracker.")
+	fmt.Println("[4] 🔍 Get all peers - List all peers associated with a torrent.")
+	fmt.Println("[5] ❌ Exit - Close the application.")
 	fmt.Println(Cyan + "=================================================" + Reset)
 }
 
-// Hiệu ứng loading spinner cho các tác vụ
+// Loading spinner effect for tasks
 func loadingSpinner(message string) {
 	spinner := []string{"|", "/", "-", "\\"}
 	fmt.Print(Yellow + message + Reset)
@@ -49,7 +49,7 @@ func loadingSpinner(message string) {
 }
 
 func main() {
-	// Giả sử torrent.StartServer là hàm khởi chạy server của bạn
+	// Assuming torrent.StartServer is your server initialization function
 	go torrent.StartServer()
 
 	trackerURL := "https://co3093-computer-networks-tracker-backend.onrender.com"
@@ -57,15 +57,15 @@ func main() {
 
 	reader := bufio.NewReader(os.Stdin)
 
-	// Vòng lặp chính
+	// Main loop
 	for {
-		// Hiển thị menu
+		// Display menu
 		showMenu()
 		fmt.Print("Choose an option (1-6): ")
 		input, _ := reader.ReadString('\n')
 		input = strings.TrimSpace(input)
 
-		// Xử lý lựa chọn
+		// Process choice
 		switch input {
 		case "1":
 			fmt.Println(Green + "Sharing a file..." + Reset)
@@ -83,7 +83,7 @@ func main() {
 			fmt.Println(Green + "Exiting program..." + Reset)
 			return
 		default:
-			fmt.Println(Red + "Invalid choice, please try again." + Reset)
+			fmt.Println(Red + "Invalid choice! Please enter a number between 1 and 5." + Reset)
 		}
 	}
 }
